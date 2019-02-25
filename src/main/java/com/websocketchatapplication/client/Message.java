@@ -5,7 +5,8 @@ import java.util.Date;
 public class Message {
 
     private String message;
-    private String sender;
+    private String from;
+    private String to;
     private Date timeStamp = new Date();
 
     public String getMessage() {
@@ -15,11 +16,20 @@ public class Message {
         this.message = message;
     }
 
-    public String getSender() {
-        return sender;
+    public String getFrom() {
+        return from;
     }
-    public void setSender(String sender) {
-        this.sender = sender;
+
+    public void setFrom(String from) {
+        this.from = from;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public void setTo(String to) {
+        this.to = to;
     }
 
     public Date getTimeStamp() {

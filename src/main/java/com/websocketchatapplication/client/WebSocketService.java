@@ -17,6 +17,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class WebSocketService {
@@ -25,8 +26,35 @@ public class WebSocketService {
 
     private static String URL = "ws://localhost:8083/user/";
 
-    public void webSocketConnection() {
+    List<String> userNameList = new ArrayList<>();
+
+    public boolean sendMessage(Message message) throws JsonProcessingException {
+        LOGGER.info("WebSocketService sendMessage..");
+
+        String json = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(message);
+
+        StompSession stompSession = MyStompSessionHandler.getStompSessionMap().get(message.getTo());
+        if (stompSession == null)
+            return false;
+
+        stompSession.send("/app/chat", json);
+        System.out.println("Message sent to " + message.getTo());
+        return true;
+    }
+
+    public boolean disconnect(String name) {
+        LOGGER.info("WebSocketService disconnect..");
+        StompSession stompSession = MyStompSessionHandler.getStompSessionMap().get(name);
+        if (stompSession == null)
+            return false;
+        MyStompSessionHandler.getStompSessionMap().remove(name);
+        stompSession.disconnect();
+        return true;
+    }
+
+    public void webSocketConnection(String username) {
         LOGGER.info("WebSocketService webSocketConnection..");
+        userNameList.add(username);
 
         List<Transport> transports = new ArrayList<>(1);
         transports.add(new WebSocketTransport(new StandardWebSocketClient()));
@@ -35,31 +63,18 @@ public class WebSocketService {
 
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-        StompSessionHandler sessionHandler = new MyStompSessionHandler();
+        StompSessionHandler sessionHandler = new MyStompSessionHandler(username);
         stompClient.connect(URL, sessionHandler);
     }
 
-    public boolean sendMessage(Message message) throws JsonProcessingException {
-        LOGGER.info("WebSocketService sendMessage..");
-
-        String json = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(message);
-
-        StompSession stompSession = MyStompSessionHandler.getStompSession();
-        if (stompSession == null)
-            return false;
-
-        stompSession.send("/app/chat", json);
-        System.out.println("Message Sent");
-        return true;
-    }
-
-    public boolean disconnect() {
+    public boolean disconnectAll() {
         LOGGER.info("WebSocketService disconnect..");
-        StompSession stompSession = MyStompSessionHandler.getStompSession();
-        if (stompSession == null)
+        if (MyStompSessionHandler.getStompSessionMap().isEmpty())
             return false;
-        MyStompSessionHandler.setStompSession(null);
-        stompSession.disconnect();
+        for (Map.Entry<String, StompSession> entry : MyStompSessionHandler.getStompSessionMap().entrySet()) {
+            entry.getValue().disconnect();
+        }
+        MyStompSessionHandler.getStompSessionMap().clear();
         return true;
     }
 }

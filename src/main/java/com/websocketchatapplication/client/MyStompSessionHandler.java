@@ -9,11 +9,20 @@ import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class MyStompSessionHandler extends StompSessionHandlerAdapter {
 
-    private static StompSession stompSession;
     private final Log LOGGER = LogFactory.getLog(getClass());
+    private static Map<String,StompSession> stompSessionMap = new HashMap<>();
+    private static String username;
+
+    public MyStompSessionHandler(String username) {
+        this.username = username;
+    }
 
     @Override
     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
@@ -21,7 +30,7 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         System.out.println("New session established : " + session.getSessionId());
         session.subscribe("/user/topic/messages", this);
         System.out.println("Subscribed to /topic/messages");
-        setStompSession(session);
+        stompSessionMap.put(username,session);
     }
 
     @Override
@@ -43,11 +52,19 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         System.out.println("Received : " + message);
     }
 
-    public static void setStompSession(StompSession stompSession) {
-        MyStompSessionHandler.stompSession = stompSession;
+    public static Map<String, StompSession> getStompSessionMap() {
+        return stompSessionMap;
     }
 
-    public static StompSession getStompSession() {
-        return stompSession;
+    public static void setStompSessionMap(Map<String, StompSession> stompSessionMap) {
+        MyStompSessionHandler.stompSessionMap = stompSessionMap;
+    }
+
+    public static String getUsername() {
+        return username;
+    }
+
+    public static void setUsername(String username) {
+        MyStompSessionHandler.username = username;
     }
 }
